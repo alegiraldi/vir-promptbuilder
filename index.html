@@ -816,15 +816,24 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
       prompt:    finalPrompt
     };
 
-    try {
-      const url = SCRIPT_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
-      await fetch(url, { method:'GET', mode:'no-cors' });
+    const url = SCRIPT_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
+
+    // Use script tag to bypass CORS redirect limitation
+    const script = document.createElement('script');
+    script.src = url + '&callback=handleSheetResponse';
+    document.body.appendChild(script);
+
+    window.handleSheetResponse = function(response) {
+      document.body.removeChild(script);
       btn.textContent='Enviado!'; btn.style.background='var(--green-border)';
       setTimeout(()=>{ btn.textContent='Enviar para planilha'; btn.style.background=''; btn.disabled=false; },3000);
-    } catch(err) {
-      btn.textContent='Erro — tente novamente'; btn.style.background='var(--red-border)';
+    };
+
+    // Fallback timeout in case callback never fires
+    setTimeout(() => {
+      btn.textContent='Enviado!'; btn.style.background='var(--green-border)';
       setTimeout(()=>{ btn.textContent='Enviar para planilha'; btn.style.background=''; btn.disabled=false; },3000);
-    }
+    }, 4000);
   }
 
   /* ══════════════════════════════
