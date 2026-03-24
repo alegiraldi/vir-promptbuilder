@@ -895,18 +895,38 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
   });
   document.getElementById('advanceBtn').addEventListener('click', goToStep2);
   document.getElementById('newPromptBtn').addEventListener('click', () => {
-    // Reset step 2 fields
+    // Zera campos etapa 2
     document.getElementById('fieldCliente').value='';
     document.getElementById('fieldProjeto').value='';
     document.getElementById('fieldImagem').value='';
     document.getElementById('comments').value='';
+
+    // Zera aprovada
     aprovada=false;
     document.getElementById('aprovadaItem').classList.remove('checked');
     document.getElementById('aprovadaTick').style.display='none';
+
+    // Zera tags
     document.querySelectorAll('.tag.selected').forEach(t=>t.classList.remove('selected'));
-    document.querySelectorAll('.check-item.checked').forEach(c=>c.classList.remove('checked'));
-    selectedTags.clear(); selectedChecks.clear();
-    // Reset step 1 and navigate
+    selectedTags.clear();
+
+    // Zera checkboxes
+    document.querySelectorAll('#checkGrid .check-item.checked').forEach(c=>c.classList.remove('checked'));
+    selectedChecks.clear();
+
+    // Zera imagens
+    ['zoneOriginal','zoneIA'].forEach(id => {
+      const zone = document.getElementById(id);
+      const img = zone.querySelector('img');
+      if (img) img.remove();
+      zone.querySelector('.upload-label').style.display='';
+      zone.classList.remove('has-image');
+      zone.onclick=null;
+      const fileInput = zone.querySelector('input[type="file"]');
+      if (fileInput) { fileInput.style.display=''; fileInput.value=''; }
+    });
+
+    // Zera etapa 1 e navega
     resetStep1();
     goToStep1();
   });
