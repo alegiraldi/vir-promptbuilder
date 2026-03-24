@@ -801,6 +801,7 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
   async function submitToSheets() {
     const btn = document.getElementById('submitBtn');
     btn.textContent='Enviando...'; btn.disabled=true;
+
     const payload = {
       timestamp: new Date().toLocaleString('pt-BR'),
       userName:  currentUser.name,
@@ -814,10 +815,39 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
       comments:  document.getElementById('comments').value.trim(),
       prompt:    finalPrompt
     };
+
     try {
-      await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+      // Use an iframe + form to bypass no-cors limitations with Apps Script
+      const iframe = document.createElement('iframe');
+      iframe.name = 'hiddenFrame';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = SCRIPT_URL;
+      form.target = 'hiddenFrame';
+      form.style.display = 'none';
+
+      // Send as a single JSON field
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'payload';
+      input.value = JSON.stringify(payload);
+      form.appendChild(input);
+
+      document.body.appendChild(form);
+      form.submit();
+
+      // Clean up after submission
+      setTimeout(() => {
+        document.body.removeChild(form);
+        document.body.removeChild(iframe);
+      }, 3000);
+
       btn.textContent='Enviado!'; btn.style.background='var(--green-border)';
       setTimeout(()=>{ btn.textContent='Enviar para planilha'; btn.style.background=''; btn.disabled=false; },3000);
+
     } catch(err) {
       btn.textContent='Erro — tente novamente'; btn.style.background='var(--red-border)';
       setTimeout(()=>{ btn.textContent='Enviar para planilha'; btn.style.background=''; btn.disabled=false; },3000);
