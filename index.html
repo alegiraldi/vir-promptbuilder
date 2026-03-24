@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VIR — Geração com IA</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -66,56 +67,78 @@
       text-align: center;
     }
 
-    .login-logo { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 1rem; }
-    .login-title { font-size: 24px; font-weight: 500; margin-bottom: 0.4rem; }
-    .login-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 2.5rem; }
+    .login-logo {
+      font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--text-tertiary); margin-bottom: 1.25rem;
+    }
+
+    .login-title { font-size: 26px; font-weight: 500; margin-bottom: 0.4rem; }
+    .login-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 2.5rem; line-height: 1.6; }
 
     .login-box {
-      width: 100%; max-width: 380px;
       background: var(--surface);
       border: 0.5px solid var(--border);
       border-radius: var(--radius-lg);
-      padding: 1.75rem;
-      text-align: left;
+      padding: 2rem 2rem 1.75rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      min-width: 300px;
     }
+
+    .login-box-label {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      text-align: center;
+    }
+
+    /* Google button container */
+    #googleBtnWrap { display: flex; justify-content: center; }
 
     /* ── USER BADGE ── */
     .user-badge {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 5px 12px 5px 5px;
+      gap: 10px;
+      padding: 5px 14px 5px 5px;
       background: var(--surface);
       border: 0.5px solid var(--border);
-      border-radius: 20px;
+      border-radius: 24px;
       margin-bottom: 1.5rem;
       width: fit-content;
     }
 
-    .user-avatar {
-      width: 26px; height: 26px;
+    .user-photo {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .user-avatar-initials {
+      width: 30px; height: 30px;
       border-radius: 50%;
       background: var(--blue-border);
       color: #fff;
-      font-size: 10px; font-weight: 500;
+      font-size: 11px; font-weight: 500;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
 
     .user-info { line-height: 1.3; }
-    .user-name { font-size: 12px; font-weight: 500; }
+    .user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
     .user-email-text { font-size: 11px; color: var(--text-tertiary); }
 
     .btn-logout {
       font-size: 11px; color: var(--text-tertiary);
       background: none; border: none; cursor: pointer;
-      margin-left: 4px; text-decoration: underline;
+      text-decoration: underline; margin-left: 2px;
     }
     .btn-logout:hover { color: var(--red-border); }
 
     /* ── STEP INDICATOR ── */
     .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 2rem; }
-
     .step-dot {
       width: 28px; height: 28px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
@@ -136,7 +159,7 @@
     .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 10px; }
     .field-label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 8px; }
 
-    /* ── CARDS (step 1) ── */
+    /* ── CARDS ── */
     .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 1.75rem; }
     @media (max-width: 480px) { .cards { grid-template-columns: 1fr; } }
 
@@ -208,10 +231,7 @@
     .btn-advance:hover { opacity: 0.85; }
 
     /* ── RESULT BOX ── */
-    .result-box {
-      display: none; background: var(--surface); border: 0.5px solid var(--border);
-      border-radius: var(--radius-lg); padding: 1.25rem 1.25rem 1.5rem; margin-top: 1.5rem;
-    }
+    .result-box { display: none; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.25rem 1.5rem; margin-top: 1.5rem; }
     .result-box.visible { display: block; }
     .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
     .result-tag { font-size: 11px; font-weight: 500; font-family: var(--font-mono); background: var(--blue-fill); color: var(--blue-text); padding: 4px 12px; border-radius: 20px; }
@@ -252,11 +272,7 @@
     .summary-val { font-size: 13px; color: var(--text-primary); line-height: 1.5; flex: 1; }
     .summary-prompt-text { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; line-height: 1.7; }
 
-    .icon-copy-btn {
-      flex-shrink: 0; width: 30px; height: 30px; border-radius: var(--radius-md);
-      border: 0.5px solid var(--border-hover); background: var(--surface2);
-      cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.12s;
-    }
+    .icon-copy-btn { flex-shrink: 0; width: 30px; height: 30px; border-radius: var(--radius-md); border: 0.5px solid var(--border-hover); background: var(--surface2); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.12s; }
     .icon-copy-btn:hover { background: var(--text-primary); }
     .icon-copy-btn:hover svg { stroke: var(--bg); }
     .icon-copy-btn.copied { background: var(--green-fill); border-color: var(--green-border); }
@@ -268,16 +284,11 @@
     .tag-group:last-child { margin-bottom: 0; }
     .tag-group-label { font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 8px; }
     .tag-group-pills { display: flex; flex-wrap: wrap; gap: 7px; }
-
-    .tag {
-      padding: 5px 13px; border-radius: 20px; font-size: 12px; font-weight: 500;
-      border: 0.5px solid var(--border-hover); background: var(--surface); color: var(--text-secondary);
-      cursor: pointer; transition: all 0.12s; user-select: none;
-    }
+    .tag { padding: 5px 13px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 0.5px solid var(--border-hover); background: var(--surface); color: var(--text-secondary); cursor: pointer; transition: all 0.12s; user-select: none; }
     .tag:hover { border-color: var(--blue-border); color: var(--blue-text); background: var(--blue-fill); }
     .tag.selected { background: var(--blue-fill); color: var(--blue-text); border-color: var(--blue-border); }
 
-    /* ── IMAGEM APROVADA ── */
+    /* ── APROVADA ── */
     #aprovadaItem:hover { border-color: var(--green-border); background: var(--green-fill); }
     #aprovadaItem.checked { background: var(--green-fill); border-color: var(--green-border); }
     #aprovadaItem.checked .check-box { background: var(--green-border); border-color: var(--green-border); }
@@ -286,12 +297,7 @@
     /* ── CHECKBOXES ── */
     .check-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 1.75rem; }
     @media (max-width: 480px) { .check-grid { grid-template-columns: 1fr; } }
-
-    .check-item {
-      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-      border: 0.5px solid var(--border); border-radius: var(--radius-md);
-      background: var(--surface); cursor: pointer; transition: all 0.12s; user-select: none;
-    }
+    .check-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0.5px solid var(--border); border-radius: var(--radius-md); background: var(--surface); cursor: pointer; transition: all 0.12s; user-select: none; }
     .check-item:hover { border-color: var(--red-border); background: var(--red-fill); }
     .check-item.checked { background: var(--red-fill); border-color: var(--red-border); }
     .check-box { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--border-hover); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
@@ -326,13 +332,10 @@
   <div id="loginScreen">
     <p class="login-logo">Studio VIR</p>
     <h1 class="login-title">Geração com IA</h1>
-    <p class="login-sub">Identifique-se para começar</p>
+    <p class="login-sub">Entre com sua conta Google do Studio VIR<br>para acessar a plataforma.</p>
     <div class="login-box">
-      <p class="field-label">Nome</p>
-      <input type="text" id="loginName" placeholder="ex: Alessandro Giraldi" />
-      <p class="field-label">E-mail</p>
-      <input type="text" id="loginEmail" placeholder="ex: alessandro@studiovir.com.br" />
-      <button class="btn-primary" id="loginBtn" style="margin-top:0.5rem;">Entrar</button>
+      <p class="login-box-label">Acesso restrito a contas @studiovir.com.br</p>
+      <div id="googleBtnWrap"></div>
     </div>
   </div>
 
@@ -343,7 +346,8 @@
 
     <!-- USER BADGE -->
     <div class="user-badge">
-      <div class="user-avatar" id="userAvatar"></div>
+      <img class="user-photo" id="userPhoto" src="" alt="" style="display:none" />
+      <div class="user-avatar-initials" id="userInitials"></div>
       <div class="user-info">
         <div class="user-name" id="userNameBadge"></div>
         <div class="user-email-text" id="userEmailBadge"></div>
@@ -360,9 +364,7 @@
       <span class="step-label" id="lbl2">Registro de resultado</span>
     </div>
 
-    <!-- ══════════════════════════════════════════ -->
-    <!-- ETAPA 1                                    -->
-    <!-- ══════════════════════════════════════════ -->
+    <!-- ETAPA 1 -->
     <div id="step1">
       <p class="logo">Studio VIR — Prompt Builder</p>
       <h1>Gerador de prompts de detalhe</h1>
@@ -411,15 +413,12 @@
       <button class="btn-advance" id="advanceBtn" style="display:none">Registrar resultado →</button>
     </div>
 
-    <!-- ══════════════════════════════════════════ -->
-    <!-- ETAPA 2                                    -->
-    <!-- ══════════════════════════════════════════ -->
+    <!-- ETAPA 2 -->
     <div id="step2">
       <p class="logo">Studio VIR — Registro de Resultado</p>
       <h1>Análise do teste</h1>
       <p class="sub">Registre as imagens, classifique e documente o resultado para análise futura.</p>
 
-      <!-- IMAGENS -->
       <div class="section-block">
         <p class="section-label">Imagens</p>
         <div class="image-upload-grid">
@@ -440,13 +439,11 @@
         </div>
       </div>
 
-      <!-- LIGHTBOX -->
       <div class="lightbox-overlay" id="lightbox">
         <span class="lightbox-close" id="lightboxClose">×</span>
         <img id="lightboxImg" src="" />
       </div>
 
-      <!-- RESUMO -->
       <div class="section-block">
         <p class="section-label">Resumo do prompt gerado</p>
         <div class="summary-box">
@@ -474,13 +471,11 @@
         </div>
       </div>
 
-      <!-- TAGS -->
       <div class="section-block">
         <p class="section-label">Tags da imagem</p>
         <div class="tags-wrap" id="tagsWrap"></div>
       </div>
 
-      <!-- IMAGEM APROVADA -->
       <div class="section-block">
         <div class="check-item" id="aprovadaItem" style="max-width:260px;">
           <div class="check-box"><div class="check-tick" id="aprovadaTick"></div></div>
@@ -488,19 +483,16 @@
         </div>
       </div>
 
-      <!-- ANÁLISE -->
       <div class="section-block">
         <p class="section-label">Pontos que não funcionaram</p>
         <div class="check-grid" id="checkGrid"></div>
       </div>
 
-      <!-- COMENTÁRIOS -->
       <div class="section-block">
         <p class="section-label">Comentários adicionais</p>
         <textarea id="comments" placeholder="Descreva padrões observados, hipóteses, ajustes a testar..."></textarea>
       </div>
 
-      <!-- NAV -->
       <div class="nav-row">
         <button class="btn-secondary" id="backBtn">← Voltar</button>
         <button class="btn-primary" id="submitBtn">Enviar para planilha</button>
@@ -512,10 +504,14 @@
 
 <script>
   /* ══════════════════════════════
-     CONSTANTES
+     CONFIG
   ══════════════════════════════ */
+  const CLIENT_ID  = '218113453869-if5rr5o65hc20kaej22kqe5s9vfnqmk7.apps.googleusercontent.com';
   const SCRIPT_URL = 'https://script.google.com/a/macros/studiovir.com.br/s/AKfycbyiJo-deXYLX13VHxk8h7NbswG0uxk4aRk4fXSvCpcJefAIjL4HFPUszy4EIp1Kv9eE0g/exec';
 
+  /* ══════════════════════════════
+     PROMPTS
+  ══════════════════════════════ */
   const PROMPTS = [
     { label: "Floor Level", template: `Using the attached image as reference, generate a photorealistic editorial detail photograph from an extremely low camera angle, positioned at floor level or just above, tilted upward 10-15 degrees.
 
@@ -596,24 +592,47 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
   /* ══════════════════════════════
      STATE
   ══════════════════════════════ */
-  let currentUser  = { name: '', email: '' };
-  let selectedCard = 0;
+  let currentUser   = { name:'', email:'', photo:'' };
+  let selectedCard  = 0;
   let translatedObj = '';
   let translateTimer = null;
-  let finalPrompt  = '';
+  let finalPrompt   = '';
   let finalObjLabel = '';
   let selectedTags  = new Set();
   let selectedChecks = new Set();
   let aprovada = false;
 
   /* ══════════════════════════════
-     LOGIN
+     GOOGLE IDENTITY SERVICES
   ══════════════════════════════ */
-  function doLogin() {
-    const name  = document.getElementById('loginName').value.trim();
-    const email = document.getElementById('loginEmail').value.trim();
-    if (!name || !email) { document.getElementById('loginName').focus(); return; }
-    currentUser = { name, email };
+  window.addEventListener('load', () => {
+    google.accounts.id.initialize({
+      client_id: CLIENT_ID,
+      callback: handleCredential,
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
+
+    google.accounts.id.renderButton(
+      document.getElementById('googleBtnWrap'),
+      { theme: 'outline', size: 'large', text: 'signin_with', locale: 'pt-BR', width: 240 }
+    );
+
+    // Auto-login if session exists
+    try {
+      const saved = sessionStorage.getItem('virUser');
+      if (saved) { currentUser = JSON.parse(saved); showApp(); }
+    } catch(e) {}
+  });
+
+  function handleCredential(response) {
+    // Decode JWT payload
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    currentUser = {
+      name:  payload.name  || payload.email,
+      email: payload.email || '',
+      photo: payload.picture || ''
+    };
     sessionStorage.setItem('virUser', JSON.stringify(currentUser));
     showApp();
   }
@@ -621,37 +640,39 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
   function showApp() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
-    const initials = currentUser.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
-    document.getElementById('userAvatar').textContent = initials;
+
+    // Badge
+    if (currentUser.photo) {
+      const img = document.getElementById('userPhoto');
+      img.src = currentUser.photo;
+      img.style.display = 'block';
+      document.getElementById('userInitials').style.display = 'none';
+    } else {
+      const initials = currentUser.name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+      document.getElementById('userInitials').textContent = initials;
+      document.getElementById('userPhoto').style.display = 'none';
+    }
+
     document.getElementById('userNameBadge').textContent = currentUser.name;
     document.getElementById('userEmailBadge').textContent = currentUser.email;
   }
 
   function doLogout() {
     sessionStorage.removeItem('virUser');
-    currentUser = { name:'', email:'' };
+    currentUser = { name:'', email:'', photo:'' };
+    google.accounts.id.disableAutoSelect();
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('mainApp').style.display = 'none';
-    document.getElementById('loginName').value = '';
-    document.getElementById('loginEmail').value = '';
   }
-
-  // Auto-login
-  (function() {
-    try {
-      const saved = sessionStorage.getItem('virUser');
-      if (saved) { currentUser = JSON.parse(saved); showApp(); }
-    } catch(e) {}
-  })();
 
   /* ══════════════════════════════
      STEP 1
   ══════════════════════════════ */
-  document.getElementById('angleCards').addEventListener('click', function(e) {
+  document.getElementById('angleCards').addEventListener('click', e => {
     const card = e.target.closest('.card');
     if (!card) return;
     selectedCard = parseInt(card.dataset.idx);
-    document.querySelectorAll('#angleCards .card').forEach((c,i) => c.classList.toggle('active', i === selectedCard));
+    document.querySelectorAll('#angleCards .card').forEach((c,i) => c.classList.toggle('active', i===selectedCard));
   });
 
   async function translateObj(text) {
@@ -662,9 +683,8 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
       const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`;
       const res = await fetch(url);
       const data = await res.json();
-      const result = data[0].map(s => s[0]).join('').trim();
-      translatedObj = result;
-      hint.textContent='→ '+result; hint.className='translation-hint ready';
+      translatedObj = data[0].map(s=>s[0]).join('').trim();
+      hint.textContent='→ '+translatedObj; hint.className='translation-hint ready';
     } catch { translatedObj=text; hint.textContent=''; hint.className='translation-hint'; }
   }
 
@@ -674,23 +694,21 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
     const btn = document.getElementById('generateBtn');
     btn.textContent='Gerando...'; btn.disabled=true;
     if (!translatedObj) await translateObj(obj);
-    const finalObj = translatedObj || obj;
     finalObjLabel = obj;
-    const p = PROMPTS[selectedCard];
-    finalPrompt = p.template.replaceAll('[OBJECT]', finalObj);
-    document.getElementById('resultTag').textContent = p.label;
+    finalPrompt = PROMPTS[selectedCard].template.replaceAll('[OBJECT]', translatedObj||obj);
+    document.getElementById('resultTag').textContent = PROMPTS[selectedCard].label;
     document.getElementById('promptText').textContent = finalPrompt;
     document.getElementById('result').classList.add('visible');
-    document.getElementById('advanceBtn').style.display = 'block';
+    document.getElementById('advanceBtn').style.display='block';
     document.getElementById('copyBtn').textContent='Copiar';
     document.getElementById('copyBtn').className='copy-btn';
     btn.textContent='Gerar prompt'; btn.disabled=false;
-    setTimeout(() => document.getElementById('result').scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+    setTimeout(()=>document.getElementById('result').scrollIntoView({behavior:'smooth',block:'nearest'}),50);
   }
 
   function resetStep1() {
     selectedCard=0; translatedObj=''; finalPrompt=''; finalObjLabel='';
-    document.querySelectorAll('#angleCards .card').forEach((c,i) => c.classList.toggle('active', i===0));
+    document.querySelectorAll('#angleCards .card').forEach((c,i)=>c.classList.toggle('active',i===0));
     document.getElementById('obj').value='';
     document.getElementById('hint').textContent=''; document.getElementById('hint').className='translation-hint';
     document.getElementById('result').classList.remove('visible');
@@ -699,20 +717,12 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
     document.getElementById('obj').focus();
   }
 
-  function copyPrompt() {
-    navigator.clipboard.writeText(finalPrompt).then(() => {
-      const btn = document.getElementById('copyBtn');
-      btn.textContent='Copiado!'; btn.className='copy-btn copied';
-      setTimeout(() => { btn.textContent='Copiar'; btn.className='copy-btn'; }, 2000);
-    });
-  }
-
   /* ══════════════════════════════
      NAVIGATION
   ══════════════════════════════ */
   function goToStep2() {
     document.getElementById('s-angle').textContent = PROMPTS[selectedCard].label;
-    document.getElementById('s-obj').textContent = finalObjLabel + (translatedObj && translatedObj !== finalObjLabel ? ' → ' + translatedObj : '');
+    document.getElementById('s-obj').textContent = finalObjLabel+(translatedObj&&translatedObj!==finalObjLabel?' → '+translatedObj:'');
     document.getElementById('s-prompt').textContent = finalPrompt;
     document.getElementById('step1').style.display='none';
     document.getElementById('step2').classList.add('visible');
@@ -737,20 +747,16 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
   }
 
   /* ══════════════════════════════
-     TAGS + CHECKS (init)
+     TAGS + CHECKS
   ══════════════════════════════ */
   TAG_GROUPS.forEach(group => {
-    const groupEl = document.createElement('div');
-    groupEl.className = 'tag-group';
-    const lbl = document.createElement('p');
-    lbl.className='tag-group-label'; lbl.textContent=group.label;
+    const groupEl = document.createElement('div'); groupEl.className='tag-group';
+    const lbl = document.createElement('p'); lbl.className='tag-group-label'; lbl.textContent=group.label;
     groupEl.appendChild(lbl);
-    const pills = document.createElement('div');
-    pills.className='tag-group-pills';
+    const pills = document.createElement('div'); pills.className='tag-group-pills';
     group.tags.forEach(t => {
-      const el = document.createElement('span');
-      el.className='tag'; el.textContent=t;
-      el.addEventListener('click', () => { el.classList.toggle('selected'); selectedTags.has(t)?selectedTags.delete(t):selectedTags.add(t); });
+      const el = document.createElement('span'); el.className='tag'; el.textContent=t;
+      el.addEventListener('click',()=>{ el.classList.toggle('selected'); selectedTags.has(t)?selectedTags.delete(t):selectedTags.add(t); });
       pills.appendChild(el);
     });
     groupEl.appendChild(pills);
@@ -758,21 +764,19 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
   });
 
   CHECKS.forEach(c => {
-    const el = document.createElement('div');
-    el.className='check-item';
+    const el = document.createElement('div'); el.className='check-item';
     el.innerHTML=`<div class="check-box"><div class="check-tick"></div></div><span class="check-label">${c}</span>`;
-    el.addEventListener('click', () => { el.classList.toggle('checked'); selectedChecks.has(c)?selectedChecks.delete(c):selectedChecks.add(c); });
+    el.addEventListener('click',()=>{ el.classList.toggle('checked'); selectedChecks.has(c)?selectedChecks.delete(c):selectedChecks.add(c); });
     document.getElementById('checkGrid').appendChild(el);
   });
 
   /* ══════════════════════════════
-     IMAGE PREVIEW + LIGHTBOX
+     IMAGE UPLOAD + LIGHTBOX
   ══════════════════════════════ */
   function setupUpload(fileId, zoneId) {
     document.getElementById(fileId).addEventListener('change', function() {
       const zone = document.getElementById(zoneId);
-      const file = this.files[0];
-      if (!file) return;
+      const file = this.files[0]; if (!file) return;
       const reader = new FileReader();
       reader.onload = e => {
         let img = zone.querySelector('img');
@@ -788,54 +792,27 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
   setupUpload('fileOriginal','zoneOriginal');
   setupUpload('fileIA','zoneIA');
 
-  function openLightbox(src) {
-    document.getElementById('lightboxImg').src=src;
-    document.getElementById('lightbox').classList.add('open');
-    document.body.style.overflow='hidden';
-  }
-  function closeLightbox() {
-    document.getElementById('lightbox').classList.remove('open');
-    document.body.style.overflow='';
-  }
+  function openLightbox(src) { document.getElementById('lightboxImg').src=src; document.getElementById('lightbox').classList.add('open'); document.body.style.overflow='hidden'; }
+  function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); document.body.style.overflow=''; }
 
   /* ══════════════════════════════
-     APPROVED CHECKBOX
-  ══════════════════════════════ */
-  document.getElementById('aprovadaItem').addEventListener('click', () => {
-    aprovada=!aprovada;
-    document.getElementById('aprovadaItem').classList.toggle('checked',aprovada);
-    document.getElementById('aprovadaTick').style.display=aprovada?'block':'none';
-  });
-
-  /* ══════════════════════════════
-     COPY PROMPT SUMMARY
-  ══════════════════════════════ */
-  document.getElementById('promptCopyBtn').addEventListener('click', () => {
-    navigator.clipboard.writeText(finalPrompt).then(() => {
-      const btn=document.getElementById('promptCopyBtn');
-      btn.classList.add('copied');
-      setTimeout(()=>btn.classList.remove('copied'),2000);
-    });
-  });
-
-  /* ══════════════════════════════
-     SUBMIT TO SHEETS
+     SUBMIT
   ══════════════════════════════ */
   async function submitToSheets() {
     const btn = document.getElementById('submitBtn');
     btn.textContent='Enviando...'; btn.disabled=true;
     const payload = {
-      timestamp:  new Date().toLocaleString('pt-BR'),
-      userName:   currentUser.name,
-      userEmail:  currentUser.email,
-      angle:      PROMPTS[selectedCard].label,
-      objectPT:   finalObjLabel,
-      objectEN:   translatedObj || finalObjLabel,
-      approved:   aprovada ? 'Sim' : 'Não',
-      tags:       [...selectedTags].join(' | '),
-      failures:   [...selectedChecks].join(' | '),
-      comments:   document.getElementById('comments').value.trim(),
-      prompt:     finalPrompt
+      timestamp: new Date().toLocaleString('pt-BR'),
+      userName:  currentUser.name,
+      userEmail: currentUser.email,
+      angle:     PROMPTS[selectedCard].label,
+      objectPT:  finalObjLabel,
+      objectEN:  translatedObj||finalObjLabel,
+      approved:  aprovada?'Sim':'Não',
+      tags:      [...selectedTags].join(' | '),
+      failures:  [...selectedChecks].join(' | '),
+      comments:  document.getElementById('comments').value.trim(),
+      prompt:    finalPrompt
     };
     try {
       await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
@@ -850,27 +827,41 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
   /* ══════════════════════════════
      EVENT LISTENERS
   ══════════════════════════════ */
-  document.getElementById('loginBtn').addEventListener('click', doLogin);
-  document.getElementById('loginEmail').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   document.getElementById('logoutBtn').addEventListener('click', doLogout);
   document.getElementById('generateBtn').addEventListener('click', generate);
   document.getElementById('resetBtn').addEventListener('click', resetStep1);
-  document.getElementById('copyBtn').addEventListener('click', copyPrompt);
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    navigator.clipboard.writeText(finalPrompt).then(()=>{
+      const btn=document.getElementById('copyBtn');
+      btn.textContent='Copiado!'; btn.className='copy-btn copied';
+      setTimeout(()=>{ btn.textContent='Copiar'; btn.className='copy-btn'; },2000);
+    });
+  });
   document.getElementById('advanceBtn').addEventListener('click', goToStep2);
   document.getElementById('backBtn').addEventListener('click', goToStep1);
   document.getElementById('submitBtn').addEventListener('click', submitToSheets);
+  document.getElementById('aprovadaItem').addEventListener('click', ()=>{
+    aprovada=!aprovada;
+    document.getElementById('aprovadaItem').classList.toggle('checked',aprovada);
+    document.getElementById('aprovadaTick').style.display=aprovada?'block':'none';
+  });
+  document.getElementById('promptCopyBtn').addEventListener('click', ()=>{
+    navigator.clipboard.writeText(finalPrompt).then(()=>{
+      const btn=document.getElementById('promptCopyBtn');
+      btn.classList.add('copied');
+      setTimeout(()=>btn.classList.remove('copied'),2000);
+    });
+  });
   document.getElementById('lightbox').addEventListener('click', closeLightbox);
   document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
-  document.getElementById('lightboxImg').addEventListener('click', e => e.stopPropagation());
-  document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(); });
-
-  document.getElementById('obj').addEventListener('input', e => {
-    translatedObj='';
-    clearTimeout(translateTimer);
-    const val = e.target.value.trim();
-    translateTimer = setTimeout(()=>{ if(val) translateObj(val); }, 600);
+  document.getElementById('lightboxImg').addEventListener('click', e=>e.stopPropagation());
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeLightbox(); });
+  document.getElementById('obj').addEventListener('input', e=>{
+    translatedObj=''; clearTimeout(translateTimer);
+    const val=e.target.value.trim();
+    translateTimer=setTimeout(()=>{ if(val) translateObj(val); },600);
   });
-  document.getElementById('obj').addEventListener('keydown', e => { if(e.key==='Enter') generate(); });
+  document.getElementById('obj').addEventListener('keydown', e=>{ if(e.key==='Enter') generate(); });
 </script>
 </body>
 </html>
