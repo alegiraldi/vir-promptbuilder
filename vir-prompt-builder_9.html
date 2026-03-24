@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VIR — Geração com IA</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "SF Mono", "Fira Code", "Cascadia Code", "Consolas", "Courier New", monospace;
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --surface2: #f0efe9;
+      --text-primary: #1a1a18;
+      --text-secondary: #5f5e5a;
+      --text-tertiary: #9a9893;
+      --border: rgba(0,0,0,0.1);
+      --border-hover: rgba(0,0,0,0.22);
+      --blue-fill: #E6F1FB;
+      --blue-text: #0C447C;
+      --blue-border: #378ADD;
+      --blue-mid: #185FA5;
+      --green-fill: #EAF3DE;
+      --green-text: #3B6D11;
+      --green-border: #97C459;
+      --red-fill: #FCEBEB;
+      --red-text: #791F1F;
+      --red-border: #E24B4A;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1a; --surface: #252523; --surface2: #2c2c2a;
+        --text-primary: #f0efe9; --text-secondary: #b4b2a9; --text-tertiary: #5f5e5a;
+        --border: rgba(255,255,255,0.1); --border-hover: rgba(255,255,255,0.22);
+        --blue-fill: #042C53; --blue-text: #B5D4F4; --blue-border: #378ADD; --blue-mid: #85B7EB;
+        --green-fill: #173404; --green-text: #C0DD97; --green-border: #639922;
+        --red-fill: #501313; --red-text: #F7C1C1; --red-border: #E24B4A;
+      }
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 3rem 1.25rem 4rem;
+    }
+
+    .wrap { width: 100%; max-width: 720px; }
+
+    /* ── LOGIN ── */
+    #loginScreen {
+      min-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .login-logo { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 1rem; }
+    .login-title { font-size: 24px; font-weight: 500; margin-bottom: 0.4rem; }
+    .login-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 2.5rem; }
+
+    .login-box {
+      width: 100%; max-width: 380px;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      text-align: left;
+    }
+
+    /* ── USER BADGE ── */
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px 5px 5px;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+      width: fit-content;
+    }
+
+    .user-avatar {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--blue-border);
+      color: #fff;
+      font-size: 10px; font-weight: 500;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .user-info { line-height: 1.3; }
+    .user-name { font-size: 12px; font-weight: 500; }
+    .user-email-text { font-size: 11px; color: var(--text-tertiary); }
+
+    .btn-logout {
+      font-size: 11px; color: var(--text-tertiary);
+      background: none; border: none; cursor: pointer;
+      margin-left: 4px; text-decoration: underline;
+    }
+    .btn-logout:hover { color: var(--red-border); }
+
+    /* ── STEP INDICATOR ── */
+    .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 2rem; }
+
+    .step-dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 500;
+      background: var(--surface2); color: var(--text-tertiary);
+      border: 0.5px solid var(--border); transition: all 0.2s;
+    }
+    .step-dot.active { background: var(--text-primary); color: var(--bg); border-color: var(--text-primary); }
+    .step-dot.done { background: var(--green-fill); color: var(--green-text); border-color: var(--green-border); }
+    .step-label { font-size: 12px; color: var(--text-tertiary); }
+    .step-label.active { color: var(--text-primary); font-weight: 500; }
+    .step-sep { height: 0.5px; width: 24px; background: var(--border); }
+
+    /* ── TYPOGRAPHY ── */
+    .logo { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+    h1 { font-size: 26px; font-weight: 500; line-height: 1.15; margin-bottom: 0.4rem; }
+    .sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 2.25rem; line-height: 1.6; }
+    .section-label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 10px; }
+    .field-label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 8px; }
+
+    /* ── CARDS (step 1) ── */
+    .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 1.75rem; }
+    @media (max-width: 480px) { .cards { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg);
+      padding: 1rem 1rem 0.9rem; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s; text-align: left; width: 100%;
+      font-family: var(--font-sans);
+    }
+    .card:hover { border-color: var(--border-hover); background: var(--surface2); }
+    .card.active { border: 1.5px solid var(--blue-border); background: var(--blue-fill); }
+    .card-num { font-size: 10px; font-family: var(--font-mono); color: var(--text-tertiary); margin-bottom: 6px; }
+    .card.active .card-num { color: var(--blue-mid); }
+    .card-title { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; line-height: 1.3; }
+    .card.active .card-title { color: var(--blue-text); }
+    .card-desc { font-size: 11.5px; color: var(--text-tertiary); line-height: 1.55; }
+    .card.active .card-desc { color: var(--blue-mid); }
+
+    /* ── INPUTS ── */
+    input[type="text"] {
+      width: 100%; padding: 11px 14px; font-size: 15px;
+      font-family: var(--font-sans); border: 0.5px solid var(--border-hover);
+      border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary);
+      outline: none; margin-bottom: 1.25rem;
+      transition: border-color 0.15s, box-shadow 0.15s; -webkit-appearance: none;
+    }
+    input[type="text"]::placeholder { color: var(--text-tertiary); }
+    input[type="text"]:focus { border-color: var(--blue-border); box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+
+    .translation-hint { font-size: 12px; color: var(--text-tertiary); margin-top: -0.9rem; margin-bottom: 1.25rem; min-height: 18px; font-family: var(--font-mono); }
+    .translation-hint.loading { color: var(--blue-mid); }
+    .translation-hint.ready { color: var(--text-secondary); }
+
+    textarea {
+      width: 100%; padding: 11px 14px; font-size: 14px;
+      font-family: var(--font-sans); border: 0.5px solid var(--border-hover);
+      border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary);
+      outline: none; resize: vertical; min-height: 90px; margin-bottom: 1.75rem;
+      transition: border-color 0.15s, box-shadow 0.15s; line-height: 1.6;
+    }
+    textarea::placeholder { color: var(--text-tertiary); }
+    textarea:focus { border-color: var(--blue-border); box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+
+    /* ── BUTTONS ── */
+    .btn-primary {
+      width: 100%; padding: 12px; font-size: 14px; font-weight: 500;
+      font-family: var(--font-sans); background: var(--text-primary); color: var(--bg);
+      border: none; border-radius: var(--radius-md); cursor: pointer;
+      transition: opacity 0.15s; margin-bottom: 0; letter-spacing: 0.01em;
+    }
+    .btn-primary:hover { opacity: 0.75; }
+    .btn-primary:active { opacity: 0.6; }
+    .btn-primary:disabled { opacity: 0.4; cursor: default; }
+
+    .btn-secondary {
+      width: 100%; padding: 12px; font-size: 14px; font-weight: 500;
+      font-family: var(--font-sans); background: transparent; color: var(--text-secondary);
+      border: 0.5px solid var(--border-hover); border-radius: var(--radius-md); cursor: pointer;
+      transition: background 0.15s, color 0.15s; margin-top: 8px; letter-spacing: 0.01em;
+    }
+    .btn-secondary:hover { background: var(--surface2); color: var(--text-primary); }
+
+    .btn-advance {
+      width: 100%; padding: 13px; font-size: 14px; font-weight: 500;
+      font-family: var(--font-sans); background: var(--blue-border); color: #fff;
+      border: none; border-radius: var(--radius-md); cursor: pointer;
+      transition: opacity 0.15s; margin-top: 1.5rem; letter-spacing: 0.01em;
+    }
+    .btn-advance:hover { opacity: 0.85; }
+
+    /* ── RESULT BOX ── */
+    .result-box {
+      display: none; background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1.25rem 1.25rem 1.5rem; margin-top: 1.5rem;
+    }
+    .result-box.visible { display: block; }
+    .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .result-tag { font-size: 11px; font-weight: 500; font-family: var(--font-mono); background: var(--blue-fill); color: var(--blue-text); padding: 4px 12px; border-radius: 20px; }
+    .copy-btn { font-size: 12px; font-weight: 500; font-family: var(--font-sans); background: var(--surface2); color: var(--text-secondary); border: 0.5px solid var(--border-hover); border-radius: var(--radius-md); padding: 6px 16px; cursor: pointer; transition: background 0.12s, color 0.12s; }
+    .copy-btn:hover { background: var(--text-primary); color: var(--bg); }
+    .copy-btn.copied { background: var(--green-fill); color: var(--green-text); border-color: var(--green-border); }
+    .divider { height: 0.5px; background: var(--border); margin: 0 0 1rem; }
+    .prompt-text { font-size: 12px; font-family: var(--font-mono); color: var(--text-primary); line-height: 1.85; white-space: pre-wrap; word-break: break-word; }
+
+    /* ── STEP 2 ── */
+    #step2 { display: none; }
+    #step2.visible { display: block; }
+
+    .image-upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.75rem; }
+    @media (max-width: 520px) { .image-upload-grid { grid-template-columns: 1fr; } }
+
+    .upload-zone {
+      border: 0.5px dashed var(--border-hover); border-radius: var(--radius-lg);
+      background: var(--surface); min-height: 180px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+      position: relative; overflow: hidden;
+    }
+    .upload-zone:hover { border-color: var(--blue-border); background: var(--blue-fill); }
+    .upload-zone img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; border-radius: var(--radius-lg); }
+    .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; margin: 0; border: none; background: transparent; }
+    .upload-label { font-size: 12px; color: var(--text-tertiary); text-align: center; padding: 1rem; pointer-events: none; z-index: 1; }
+    .upload-icon { font-size: 22px; margin-bottom: 8px; display: block; }
+    .upload-caption { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 6px; }
+    .upload-zone.has-image { cursor: zoom-in; }
+    .upload-zone.has-image input[type="file"] { display: none; }
+
+    /* ── SUMMARY ── */
+    .summary-box { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.75rem; }
+    .summary-row { display: flex; gap: 12px; margin-bottom: 10px; align-items: flex-start; }
+    .summary-row:last-child { margin-bottom: 0; }
+    .summary-key { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); min-width: 80px; padding-top: 1px; }
+    .summary-val { font-size: 13px; color: var(--text-primary); line-height: 1.5; flex: 1; }
+    .summary-prompt-text { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; line-height: 1.7; }
+
+    .icon-copy-btn {
+      flex-shrink: 0; width: 30px; height: 30px; border-radius: var(--radius-md);
+      border: 0.5px solid var(--border-hover); background: var(--surface2);
+      cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.12s;
+    }
+    .icon-copy-btn:hover { background: var(--text-primary); }
+    .icon-copy-btn:hover svg { stroke: var(--bg); }
+    .icon-copy-btn.copied { background: var(--green-fill); border-color: var(--green-border); }
+    .icon-copy-btn.copied svg { stroke: var(--green-text); }
+
+    /* ── TAGS ── */
+    .tags-wrap { margin-bottom: 1.75rem; }
+    .tag-group { margin-bottom: 1rem; }
+    .tag-group:last-child { margin-bottom: 0; }
+    .tag-group-label { font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 8px; }
+    .tag-group-pills { display: flex; flex-wrap: wrap; gap: 7px; }
+
+    .tag {
+      padding: 5px 13px; border-radius: 20px; font-size: 12px; font-weight: 500;
+      border: 0.5px solid var(--border-hover); background: var(--surface); color: var(--text-secondary);
+      cursor: pointer; transition: all 0.12s; user-select: none;
+    }
+    .tag:hover { border-color: var(--blue-border); color: var(--blue-text); background: var(--blue-fill); }
+    .tag.selected { background: var(--blue-fill); color: var(--blue-text); border-color: var(--blue-border); }
+
+    /* ── IMAGEM APROVADA ── */
+    #aprovadaItem:hover { border-color: var(--green-border); background: var(--green-fill); }
+    #aprovadaItem.checked { background: var(--green-fill); border-color: var(--green-border); }
+    #aprovadaItem.checked .check-box { background: var(--green-border); border-color: var(--green-border); }
+    #aprovadaItem.checked .check-label { color: var(--green-text); font-weight: 500; }
+
+    /* ── CHECKBOXES ── */
+    .check-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 1.75rem; }
+    @media (max-width: 480px) { .check-grid { grid-template-columns: 1fr; } }
+
+    .check-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border: 0.5px solid var(--border); border-radius: var(--radius-md);
+      background: var(--surface); cursor: pointer; transition: all 0.12s; user-select: none;
+    }
+    .check-item:hover { border-color: var(--red-border); background: var(--red-fill); }
+    .check-item.checked { background: var(--red-fill); border-color: var(--red-border); }
+    .check-box { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--border-hover); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
+    .check-item.checked .check-box { background: var(--red-border); border-color: var(--red-border); }
+    .check-tick { display: none; width: 8px; height: 5px; border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff; transform: rotate(-45deg) translate(1px, -1px); }
+    .check-item.checked .check-tick { display: block; }
+    .check-label { font-size: 13px; color: var(--text-secondary); }
+    .check-item.checked .check-label { color: var(--red-text); }
+
+    /* ── NAV ROW ── */
+    .nav-row { display: flex; gap: 10px; margin-top: 1.5rem; }
+    .nav-row .btn-primary { flex: 2; margin: 0; }
+    .nav-row .btn-secondary { flex: 1; margin: 0; }
+
+    /* ── SECTION BLOCK ── */
+    .section-block { margin-bottom: 1.75rem; }
+    .section-block .section-label { margin-bottom: 12px; }
+
+    /* ── LIGHTBOX ── */
+    .lightbox-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 9999; align-items: center; justify-content: center; cursor: zoom-out; }
+    .lightbox-overlay.open { display: flex; }
+    .lightbox-overlay img { max-width: 92vw; max-height: 90vh; object-fit: contain; border-radius: var(--radius-lg); cursor: default; }
+    .lightbox-close { position: absolute; top: 20px; right: 24px; color: rgba(255,255,255,0.7); font-size: 28px; cursor: pointer; line-height: 1; user-select: none; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- LOGIN                                       -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="loginScreen">
+    <p class="login-logo">Studio VIR</p>
+    <h1 class="login-title">Geração com IA</h1>
+    <p class="login-sub">Identifique-se para começar</p>
+    <div class="login-box">
+      <p class="field-label">Nome</p>
+      <input type="text" id="loginName" placeholder="ex: Alessandro Giraldi" />
+      <p class="field-label">E-mail</p>
+      <input type="text" id="loginEmail" placeholder="ex: alessandro@studiovir.com.br" />
+      <button class="btn-primary" id="loginBtn" style="margin-top:0.5rem;">Entrar</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- MAIN APP                                    -->
+  <!-- ══════════════════════════════════════════ -->
+  <div id="mainApp" style="display:none">
+
+    <!-- USER BADGE -->
+    <div class="user-badge">
+      <div class="user-avatar" id="userAvatar"></div>
+      <div class="user-info">
+        <div class="user-name" id="userNameBadge"></div>
+        <div class="user-email-text" id="userEmailBadge"></div>
+      </div>
+      <button class="btn-logout" id="logoutBtn">sair</button>
+    </div>
+
+    <!-- STEP INDICATOR -->
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot1">1</div>
+      <span class="step-label active" id="lbl1">Gerador de prompt</span>
+      <div class="step-sep"></div>
+      <div class="step-dot" id="dot2">2</div>
+      <span class="step-label" id="lbl2">Registro de resultado</span>
+    </div>
+
+    <!-- ══════════════════════════════════════════ -->
+    <!-- ETAPA 1                                    -->
+    <!-- ══════════════════════════════════════════ -->
+    <div id="step1">
+      <p class="logo">Studio VIR — Prompt Builder</p>
+      <h1>Gerador de prompts de detalhe</h1>
+      <p class="sub">Escolha o ângulo, descreva o objeto e copie o prompt para o Gemini.</p>
+
+      <p class="section-label">Tipo de ângulo</p>
+      <div class="cards" id="angleCards">
+        <button class="card active" data-idx="0">
+          <div class="card-num">01</div>
+          <div class="card-title">Floor Level</div>
+          <div class="card-desc">Câmera rente ao chão, inclinada para cima. Sofás, poltronas, camas.</div>
+        </button>
+        <button class="card" data-idx="1">
+          <div class="card-num">02</div>
+          <div class="card-title">Diagonal alto 40–45°</div>
+          <div class="card-desc">Câmera alta, perspectiva preservada. Sombras no piso como elemento visual.</div>
+        </button>
+        <button class="card" data-idx="2">
+          <div class="card-num">03</div>
+          <div class="card-title">Eye-level frontal</div>
+          <div class="card-desc">Altura do olho, 120–130 cm. Backdrop arquitetônico dominante.</div>
+        </button>
+        <button class="card" data-idx="3">
+          <div class="card-num">04</div>
+          <div class="card-title">Hero Shot 85mm</div>
+          <div class="card-desc">Close no objeto, bokeh total no fundo. Objetos decorativos e styling.</div>
+        </button>
+      </div>
+
+      <p class="field-label">Objeto</p>
+      <input type="text" id="obj" placeholder="ex: sofá de veludo com pés em carvalho natural" />
+      <p class="translation-hint" id="hint"></p>
+
+      <button class="btn-primary" id="generateBtn">Gerar prompt</button>
+      <button class="btn-secondary" id="resetBtn">Novo prompt</button>
+
+      <div class="result-box" id="result">
+        <div class="result-header">
+          <span class="result-tag" id="resultTag"></span>
+          <button class="copy-btn" id="copyBtn">Copiar</button>
+        </div>
+        <div class="divider"></div>
+        <pre class="prompt-text" id="promptText"></pre>
+      </div>
+
+      <button class="btn-advance" id="advanceBtn" style="display:none">Registrar resultado →</button>
+    </div>
+
+    <!-- ══════════════════════════════════════════ -->
+    <!-- ETAPA 2                                    -->
+    <!-- ══════════════════════════════════════════ -->
+    <div id="step2">
+      <p class="logo">Studio VIR — Registro de Resultado</p>
+      <h1>Análise do teste</h1>
+      <p class="sub">Registre as imagens, classifique e documente o resultado para análise futura.</p>
+
+      <!-- IMAGENS -->
+      <div class="section-block">
+        <p class="section-label">Imagens</p>
+        <div class="image-upload-grid">
+          <div>
+            <p class="upload-caption">Original</p>
+            <div class="upload-zone" id="zoneOriginal">
+              <div class="upload-label"><span class="upload-icon">⊕</span>Clique para anexar</div>
+              <input type="file" accept="image/*" id="fileOriginal" />
+            </div>
+          </div>
+          <div>
+            <p class="upload-caption">Gerada por IA</p>
+            <div class="upload-zone" id="zoneIA">
+              <div class="upload-label"><span class="upload-icon">⊕</span>Clique para anexar</div>
+              <input type="file" accept="image/*" id="fileIA" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIGHTBOX -->
+      <div class="lightbox-overlay" id="lightbox">
+        <span class="lightbox-close" id="lightboxClose">×</span>
+        <img id="lightboxImg" src="" />
+      </div>
+
+      <!-- RESUMO -->
+      <div class="section-block">
+        <p class="section-label">Resumo do prompt gerado</p>
+        <div class="summary-box">
+          <div class="summary-row">
+            <span class="summary-key">Ângulo</span>
+            <span class="summary-val" id="s-angle">—</span>
+          </div>
+          <div class="divider" style="margin:8px 0;"></div>
+          <div class="summary-row">
+            <span class="summary-key">Objeto</span>
+            <span class="summary-val" id="s-obj">—</span>
+          </div>
+          <div class="divider" style="margin:8px 0;"></div>
+          <div class="summary-row" style="flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <span class="summary-key" style="padding-top:0;">Prompt</span>
+              <button class="icon-copy-btn" id="promptCopyBtn" title="Copiar prompt">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+              </button>
+            </div>
+            <pre class="summary-prompt-text" id="s-prompt">—</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAGS -->
+      <div class="section-block">
+        <p class="section-label">Tags da imagem</p>
+        <div class="tags-wrap" id="tagsWrap"></div>
+      </div>
+
+      <!-- IMAGEM APROVADA -->
+      <div class="section-block">
+        <div class="check-item" id="aprovadaItem" style="max-width:260px;">
+          <div class="check-box"><div class="check-tick" id="aprovadaTick"></div></div>
+          <span class="check-label">Imagem aprovada</span>
+        </div>
+      </div>
+
+      <!-- ANÁLISE -->
+      <div class="section-block">
+        <p class="section-label">Pontos que não funcionaram</p>
+        <div class="check-grid" id="checkGrid"></div>
+      </div>
+
+      <!-- COMENTÁRIOS -->
+      <div class="section-block">
+        <p class="section-label">Comentários adicionais</p>
+        <textarea id="comments" placeholder="Descreva padrões observados, hipóteses, ajustes a testar..."></textarea>
+      </div>
+
+      <!-- NAV -->
+      <div class="nav-row">
+        <button class="btn-secondary" id="backBtn">← Voltar</button>
+        <button class="btn-primary" id="submitBtn">Enviar para planilha</button>
+      </div>
+    </div>
+
+  </div><!-- /mainApp -->
+</div><!-- /wrap -->
+
+<script>
+  /* ══════════════════════════════
+     CONSTANTES
+  ══════════════════════════════ */
+  const SCRIPT_URL = 'https://script.google.com/a/macros/studiovir.com.br/s/AKfycbyiJo-deXYLX13VHxk8h7NbswG0uxk4aRk4fXSvCpcJefAIjL4HFPUszy4EIp1Kv9eE0g/exec';
+
+  const PROMPTS = [
+    { label: "Floor Level", template: `Using the attached image as reference, generate a photorealistic editorial detail photograph from an extremely low camera angle, positioned at floor level or just above, tilted upward 10-15 degrees.
+
+The [OBJECT] is the hero element, occupying the upper two-thirds of the frame. The low angle emphasizes its volume, texture and structural form from below.
+
+The foreground between the camera and the [OBJECT] is intentionally out of focus — floor surface dissolves into soft blur, creating layered depth. Background elements fall into smooth bokeh.
+
+Composition: cinematic and intimate, as if the camera was placed on the floor by accident. Candid, not staged.
+
+Lighting: match exactly the lighting conditions of the reference image — preserve the light direction, intensity, color temperature, and shadow behavior. Do not introduce or remove any light sources. All shadows and highlights must be consistent with the existing scene.
+
+Depth of field: extremely shallow throughout — foreground blurred, [OBJECT] partially sharp with focus on its closest surface texture, background fully dissolved.
+
+Color: preserve the color palette of the reference. No added saturation or contrast. Natural, muted, sophisticated tones. Film-like quality with subtle grain.
+
+Output: photorealistic editorial architecture photography, not a 3D render aesthetic. Natural imperfections welcome — slight lens aberration, organic light falloff. 4:5 aspect ratio.` },
+
+    { label: "Diagonal alto 40–45°", template: `Using the attached image as reference, generate a photorealistic editorial detail photograph from a high diagonal camera angle — positioned above and behind the [OBJECT], looking downward at approximately 40-45 degrees. This is NOT a top-down view — perspective lines must still be visible, with the far edge of the [OBJECT] appearing smaller than the near edge.
+
+The [OBJECT] is the hero element, occupying the majority of the frame. Its texture, volume and overall form are clearly readable from this diagonal above angle.
+
+The floor surface beneath extends beyond the [OBJECT] edges, with its texture and any cast shadow patterns visible on its surface. A secondary element may appear partially in the lower foreground.
+
+Composition: diagonal and architectural. The camera is high but not flat — spatial depth and perspective are preserved.
+
+Lighting: match exactly the lighting conditions of the reference image — preserve the light direction, intensity, color temperature, and shadow behavior. Do not introduce or remove any light sources. All shadows and highlights must be consistent with the existing scene.
+
+Depth of field: moderate to deep — [OBJECT] and floor both reasonably sharp, background elements slightly softer but still readable.
+
+Color: preserve the color palette of the reference. No added saturation or contrast. Natural, muted, sophisticated tones. Film-like quality with subtle grain.
+
+Output: photorealistic editorial architecture photography, not a 3D render aesthetic. Natural imperfections welcome — slight lens aberration, organic light falloff. 4:5 aspect ratio.` },
+
+    { label: "Eye-level frontal", template: `Using the attached image as reference, generate a photorealistic editorial detail photograph from a standing eye-level camera angle — positioned at approximately 120-130cm height, facing the scene frontally.
+
+The [OBJECT] is the hero element, positioned in the center or lower half of the frame. The camera is close enough that the [OBJECT] is partially cropped at the bottom and sides — neither the left nor right edge should be fully visible within the frame. The [OBJECT] fills the width of the composition without showing its complete silhouette.
+
+The background behind the [OBJECT] fills the upper half of the composition, acting as the architectural backdrop.
+
+Any foreground elements appear partially cropped at the bottom frame edge, creating spatial layering between camera and [OBJECT].
+
+Composition: architectural and composed, with clear spatial depth created by the layering of foreground, [OBJECT] and background — without relying on bokeh to separate planes.
+
+Lighting: match exactly the lighting conditions of the reference image — preserve the light direction, intensity, color temperature, and shadow behavior. Do not introduce or remove any light sources. All shadows and highlights must be consistent with the existing scene.
+
+Depth of field: moderate — foreground slightly soft, [OBJECT] sharp, background sharp with slight falloff at edges.
+
+Color: preserve the color palette of the reference. No added saturation or contrast. Natural, muted, sophisticated tones. Film-like quality with subtle grain.
+
+Output: photorealistic editorial architecture photography, not a 3D render aesthetic. Natural imperfections welcome — slight lens aberration, organic light falloff. 4:5 aspect ratio.` },
+
+    { label: "Hero Shot 85mm", template: `Using the attached image as reference, generate a photorealistic editorial detail photograph with [OBJECT] as the hero element.
+
+Camera positioned very close to the [OBJECT], at the same height as the object or slightly below, lens tilted upward 5-10 degrees. Simulated 85mm portrait lens — natural background compression, no wide-angle distortion.
+
+The [OBJECT] occupies the foreground, positioned at the left third or center of the frame. Render it with maximum sharpness and detail — surface texture and material quality must be clearly visible.
+
+Depth of field: extremely shallow. The [OBJECT] is in tack-sharp focus. Elements within 10-15cm also sharp. Everything beyond that falls progressively into smooth, creamy bokeh — mid-ground softly blurred, background fully dissolved but still spatially readable.
+
+Lighting: match exactly the lighting conditions of the reference image — preserve the light direction, intensity, color temperature, and shadow behavior. Do not introduce or remove any light sources. All shadows and highlights must be consistent with the existing scene.
+
+Composition: editorial interior photography style. The surrounding environment is implied, not described — it provides context through color, material and light in the blurred background, without competing with the hero element.
+
+Color: preserve the color palette of the reference. No added saturation or contrast. Natural, muted, sophisticated tones. Film-like quality with subtle grain.
+
+Output: photorealistic editorial architecture photography, not a 3D render aesthetic. Natural imperfections welcome — slight lens aberration, organic light falloff. 4:5 aspect ratio.` }
+  ];
+
+  const TAG_GROUPS = [
+    { label: "Tipo",       tags: ["Interna","Externa"] },
+    { label: "Clima",      tags: ["Dia","Tarde","Noite"] },
+    { label: "Iluminação", tags: ["Luz Natural","Luz Artificial"] },
+    { label: "Ambiente",   tags: ["Fachada","Embasamento","Lobby","Academia","Piscina","Quadra","Playground","Pet Place","Sauna","Brinquedoteca","Salão de Jogos","Salão de Festas","Salão Gourmet","Churrasqueira"] }
+  ];
+
+  const CHECKS = ["Paisagismo","Mobiliário","Reflexos","Entorno","Revestimentos","Mudança de contexto","Iluminação","Proporções"];
+
+  /* ══════════════════════════════
+     STATE
+  ══════════════════════════════ */
+  let currentUser  = { name: '', email: '' };
+  let selectedCard = 0;
+  let translatedObj = '';
+  let translateTimer = null;
+  let finalPrompt  = '';
+  let finalObjLabel = '';
+  let selectedTags  = new Set();
+  let selectedChecks = new Set();
+  let aprovada = false;
+
+  /* ══════════════════════════════
+     LOGIN
+  ══════════════════════════════ */
+  function doLogin() {
+    const name  = document.getElementById('loginName').value.trim();
+    const email = document.getElementById('loginEmail').value.trim();
+    if (!name || !email) { document.getElementById('loginName').focus(); return; }
+    currentUser = { name, email };
+    sessionStorage.setItem('virUser', JSON.stringify(currentUser));
+    showApp();
+  }
+
+  function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    const initials = currentUser.name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    document.getElementById('userAvatar').textContent = initials;
+    document.getElementById('userNameBadge').textContent = currentUser.name;
+    document.getElementById('userEmailBadge').textContent = currentUser.email;
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem('virUser');
+    currentUser = { name:'', email:'' };
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('loginName').value = '';
+    document.getElementById('loginEmail').value = '';
+  }
+
+  // Auto-login
+  (function() {
+    try {
+      const saved = sessionStorage.getItem('virUser');
+      if (saved) { currentUser = JSON.parse(saved); showApp(); }
+    } catch(e) {}
+  })();
+
+  /* ══════════════════════════════
+     STEP 1
+  ══════════════════════════════ */
+  document.getElementById('angleCards').addEventListener('click', function(e) {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    selectedCard = parseInt(card.dataset.idx);
+    document.querySelectorAll('#angleCards .card').forEach((c,i) => c.classList.toggle('active', i === selectedCard));
+  });
+
+  async function translateObj(text) {
+    const hint = document.getElementById('hint');
+    if (!text) { hint.textContent=''; hint.className='translation-hint'; translatedObj=''; return; }
+    hint.textContent='traduzindo...'; hint.className='translation-hint loading';
+    try {
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const result = data[0].map(s => s[0]).join('').trim();
+      translatedObj = result;
+      hint.textContent='→ '+result; hint.className='translation-hint ready';
+    } catch { translatedObj=text; hint.textContent=''; hint.className='translation-hint'; }
+  }
+
+  async function generate() {
+    const obj = document.getElementById('obj').value.trim();
+    if (!obj) { document.getElementById('obj').focus(); return; }
+    const btn = document.getElementById('generateBtn');
+    btn.textContent='Gerando...'; btn.disabled=true;
+    if (!translatedObj) await translateObj(obj);
+    const finalObj = translatedObj || obj;
+    finalObjLabel = obj;
+    const p = PROMPTS[selectedCard];
+    finalPrompt = p.template.replaceAll('[OBJECT]', finalObj);
+    document.getElementById('resultTag').textContent = p.label;
+    document.getElementById('promptText').textContent = finalPrompt;
+    document.getElementById('result').classList.add('visible');
+    document.getElementById('advanceBtn').style.display = 'block';
+    document.getElementById('copyBtn').textContent='Copiar';
+    document.getElementById('copyBtn').className='copy-btn';
+    btn.textContent='Gerar prompt'; btn.disabled=false;
+    setTimeout(() => document.getElementById('result').scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+  }
+
+  function resetStep1() {
+    selectedCard=0; translatedObj=''; finalPrompt=''; finalObjLabel='';
+    document.querySelectorAll('#angleCards .card').forEach((c,i) => c.classList.toggle('active', i===0));
+    document.getElementById('obj').value='';
+    document.getElementById('hint').textContent=''; document.getElementById('hint').className='translation-hint';
+    document.getElementById('result').classList.remove('visible');
+    document.getElementById('advanceBtn').style.display='none';
+    window.scrollTo({top:0,behavior:'smooth'});
+    document.getElementById('obj').focus();
+  }
+
+  function copyPrompt() {
+    navigator.clipboard.writeText(finalPrompt).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent='Copiado!'; btn.className='copy-btn copied';
+      setTimeout(() => { btn.textContent='Copiar'; btn.className='copy-btn'; }, 2000);
+    });
+  }
+
+  /* ══════════════════════════════
+     NAVIGATION
+  ══════════════════════════════ */
+  function goToStep2() {
+    document.getElementById('s-angle').textContent = PROMPTS[selectedCard].label;
+    document.getElementById('s-obj').textContent = finalObjLabel + (translatedObj && translatedObj !== finalObjLabel ? ' → ' + translatedObj : '');
+    document.getElementById('s-prompt').textContent = finalPrompt;
+    document.getElementById('step1').style.display='none';
+    document.getElementById('step2').classList.add('visible');
+    document.getElementById('dot1').className='step-dot done'; document.getElementById('dot1').textContent='✓';
+    document.getElementById('lbl1').className='step-label';
+    document.getElementById('dot2').className='step-dot active';
+    document.getElementById('lbl2').className='step-label active';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function goToStep1() {
+    aprovada=false;
+    document.getElementById('aprovadaItem').classList.remove('checked');
+    document.getElementById('aprovadaTick').style.display='none';
+    document.getElementById('step1').style.display='block';
+    document.getElementById('step2').classList.remove('visible');
+    document.getElementById('dot1').className='step-dot active'; document.getElementById('dot1').textContent='1';
+    document.getElementById('lbl1').className='step-label active';
+    document.getElementById('dot2').className='step-dot';
+    document.getElementById('lbl2').className='step-label';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  /* ══════════════════════════════
+     TAGS + CHECKS (init)
+  ══════════════════════════════ */
+  TAG_GROUPS.forEach(group => {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'tag-group';
+    const lbl = document.createElement('p');
+    lbl.className='tag-group-label'; lbl.textContent=group.label;
+    groupEl.appendChild(lbl);
+    const pills = document.createElement('div');
+    pills.className='tag-group-pills';
+    group.tags.forEach(t => {
+      const el = document.createElement('span');
+      el.className='tag'; el.textContent=t;
+      el.addEventListener('click', () => { el.classList.toggle('selected'); selectedTags.has(t)?selectedTags.delete(t):selectedTags.add(t); });
+      pills.appendChild(el);
+    });
+    groupEl.appendChild(pills);
+    document.getElementById('tagsWrap').appendChild(groupEl);
+  });
+
+  CHECKS.forEach(c => {
+    const el = document.createElement('div');
+    el.className='check-item';
+    el.innerHTML=`<div class="check-box"><div class="check-tick"></div></div><span class="check-label">${c}</span>`;
+    el.addEventListener('click', () => { el.classList.toggle('checked'); selectedChecks.has(c)?selectedChecks.delete(c):selectedChecks.add(c); });
+    document.getElementById('checkGrid').appendChild(el);
+  });
+
+  /* ══════════════════════════════
+     IMAGE PREVIEW + LIGHTBOX
+  ══════════════════════════════ */
+  function setupUpload(fileId, zoneId) {
+    document.getElementById(fileId).addEventListener('change', function() {
+      const zone = document.getElementById(zoneId);
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        let img = zone.querySelector('img');
+        if (!img) { img = document.createElement('img'); zone.appendChild(img); }
+        img.src = e.target.result;
+        zone.querySelector('.upload-label').style.display='none';
+        zone.classList.add('has-image');
+        zone.onclick = () => openLightbox(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  setupUpload('fileOriginal','zoneOriginal');
+  setupUpload('fileIA','zoneIA');
+
+  function openLightbox(src) {
+    document.getElementById('lightboxImg').src=src;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow='hidden';
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow='';
+  }
+
+  /* ══════════════════════════════
+     APPROVED CHECKBOX
+  ══════════════════════════════ */
+  document.getElementById('aprovadaItem').addEventListener('click', () => {
+    aprovada=!aprovada;
+    document.getElementById('aprovadaItem').classList.toggle('checked',aprovada);
+    document.getElementById('aprovadaTick').style.display=aprovada?'block':'none';
+  });
+
+  /* ══════════════════════════════
+     COPY PROMPT SUMMARY
+  ══════════════════════════════ */
+  document.getElementById('promptCopyBtn').addEventListener('click', () => {
+    navigator.clipboard.writeText(finalPrompt).then(() => {
+      const btn=document.getElementById('promptCopyBtn');
+      btn.classList.add('copied');
+      setTimeout(()=>btn.classList.remove('copied'),2000);
+    });
+  });
+
+  /* ══════════════════════════════
+     SUBMIT TO SHEETS
+  ══════════════════════════════ */
+  async function submitToSheets() {
+    const btn = document.getElementById('submitBtn');
+    btn.textContent='Enviando...'; btn.disabled=true;
+    const payload = {
+      timestamp:  new Date().toLocaleString('pt-BR'),
+      userName:   currentUser.name,
+      userEmail:  currentUser.email,
+      angle:      PROMPTS[selectedCard].label,
+      objectPT:   finalObjLabel,
+      objectEN:   translatedObj || finalObjLabel,
+      approved:   aprovada ? 'Sim' : 'Não',
+      tags:       [...selectedTags].join(' | '),
+      failures:   [...selectedChecks].join(' | '),
+      comments:   document.getElementById('comments').value.trim(),
+      prompt:     finalPrompt
+    };
+    try {
+      await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+      btn.textContent='Enviado!'; btn.style.background='var(--green-border)';
+      setTimeout(()=>{ btn.textContent='Enviar para planilha'; btn.style.background=''; btn.disabled=false; },3000);
+    } catch(err) {
+      btn.textContent='Erro — tente novamente'; btn.style.background='var(--red-border)';
+      setTimeout(()=>{ btn.textContent='Enviar para planilha'; btn.style.background=''; btn.disabled=false; },3000);
+    }
+  }
+
+  /* ══════════════════════════════
+     EVENT LISTENERS
+  ══════════════════════════════ */
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.getElementById('loginEmail').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('logoutBtn').addEventListener('click', doLogout);
+  document.getElementById('generateBtn').addEventListener('click', generate);
+  document.getElementById('resetBtn').addEventListener('click', resetStep1);
+  document.getElementById('copyBtn').addEventListener('click', copyPrompt);
+  document.getElementById('advanceBtn').addEventListener('click', goToStep2);
+  document.getElementById('backBtn').addEventListener('click', goToStep1);
+  document.getElementById('submitBtn').addEventListener('click', submitToSheets);
+  document.getElementById('lightbox').addEventListener('click', closeLightbox);
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  document.getElementById('lightboxImg').addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(); });
+
+  document.getElementById('obj').addEventListener('input', e => {
+    translatedObj='';
+    clearTimeout(translateTimer);
+    const val = e.target.value.trim();
+    translateTimer = setTimeout(()=>{ if(val) translateObj(val); }, 600);
+  });
+  document.getElementById('obj').addEventListener('keydown', e => { if(e.key==='Enter') generate(); });
+</script>
+</body>
+</html>
