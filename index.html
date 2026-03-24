@@ -419,6 +419,24 @@
       <h1>Análise do teste</h1>
       <p class="sub">Registre as imagens, classifique e documente o resultado para análise futura.</p>
 
+      <!-- CLIENTE / PROJETO / IMAGEM -->
+      <div class="section-block">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+          <div>
+            <p class="field-label">Cliente</p>
+            <input type="text" id="fieldCliente" placeholder="ex: Soter" style="margin-bottom:0;" />
+          </div>
+          <div>
+            <p class="field-label">Projeto</p>
+            <input type="text" id="fieldProjeto" placeholder="ex: DMS" style="margin-bottom:0;" />
+          </div>
+          <div>
+            <p class="field-label">Nome da imagem</p>
+            <input type="text" id="fieldImagem" placeholder="ex: Persp. 01" style="margin-bottom:0;" />
+          </div>
+        </div>
+      </div>
+
       <div class="section-block">
         <p class="section-label">Imagens</p>
         <div class="image-upload-grid">
@@ -497,6 +515,7 @@
         <button class="btn-secondary" id="backBtn">← Voltar</button>
         <button class="btn-primary" id="submitBtn">Enviar para planilha</button>
       </div>
+      <button class="btn-secondary" id="newPromptBtn" style="margin-top:10px;">Novo prompt</button>
     </div>
 
   </div><!-- /mainApp -->
@@ -751,8 +770,30 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
   ══════════════════════════════ */
   TAG_GROUPS.forEach(group => {
     const groupEl = document.createElement('div'); groupEl.className='tag-group';
-    const lbl = document.createElement('p'); lbl.className='tag-group-label'; lbl.textContent=group.label;
-    groupEl.appendChild(lbl);
+    const headerEl = document.createElement('div');
+    headerEl.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:8px;';
+    const lbl = document.createElement('p');
+    lbl.className='tag-group-label'; lbl.style.marginBottom='0'; lbl.textContent=group.label;
+    headerEl.appendChild(lbl);
+
+    // Add + button only for Ambiente group
+    if (group.label === 'Ambiente') {
+      const addBtn = document.createElement('button');
+      addBtn.textContent='+';
+      addBtn.style.cssText='font-size:13px;font-weight:500;background:var(--surface2);border:0.5px solid var(--border-hover);border-radius:var(--radius-md);padding:1px 8px;cursor:pointer;color:var(--text-secondary);font-family:var(--font-sans);';
+      addBtn.title='Adicionar tag';
+      addBtn.addEventListener('click', () => {
+        const name = prompt('Nome da nova tag:');
+        if (!name || !name.trim()) return;
+        const t = name.trim();
+        const el = document.createElement('span'); el.className='tag'; el.textContent=t;
+        el.addEventListener('click',()=>{ el.classList.toggle('selected'); selectedTags.has(t)?selectedTags.delete(t):selectedTags.add(t); });
+        pills.appendChild(el);
+      });
+      headerEl.appendChild(addBtn);
+    }
+
+    groupEl.appendChild(headerEl);
     const pills = document.createElement('div'); pills.className='tag-group-pills';
     group.tags.forEach(t => {
       const el = document.createElement('span'); el.className='tag'; el.textContent=t;
@@ -806,6 +847,9 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
       timestamp: new Date().toLocaleString('pt-BR'),
       userName:  currentUser.name,
       userEmail: currentUser.email,
+      cliente:   document.getElementById('fieldCliente').value.trim(),
+      projeto:   document.getElementById('fieldProjeto').value.trim(),
+      imagem:    document.getElementById('fieldImagem').value.trim(),
       angle:     PROMPTS[selectedCard].label,
       objectPT:  finalObjLabel,
       objectEN:  translatedObj||finalObjLabel,
@@ -850,6 +894,22 @@ Output: photorealistic editorial architecture photography, not a 3D render aesth
     });
   });
   document.getElementById('advanceBtn').addEventListener('click', goToStep2);
+  document.getElementById('newPromptBtn').addEventListener('click', () => {
+    // Reset step 2 fields
+    document.getElementById('fieldCliente').value='';
+    document.getElementById('fieldProjeto').value='';
+    document.getElementById('fieldImagem').value='';
+    document.getElementById('comments').value='';
+    aprovada=false;
+    document.getElementById('aprovadaItem').classList.remove('checked');
+    document.getElementById('aprovadaTick').style.display='none';
+    document.querySelectorAll('.tag.selected').forEach(t=>t.classList.remove('selected'));
+    document.querySelectorAll('.check-item.checked').forEach(c=>c.classList.remove('checked'));
+    selectedTags.clear(); selectedChecks.clear();
+    // Reset step 1 and navigate
+    resetStep1();
+    goToStep1();
+  });
   document.getElementById('backBtn').addEventListener('click', goToStep1);
   document.getElementById('submitBtn').addEventListener('click', submitToSheets);
   document.getElementById('aprovadaItem').addEventListener('click', ()=>{
