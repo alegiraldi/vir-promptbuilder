@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teste — Nano Banana 2</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      --bg: #f5f4f0; --surface: #fff; --border: rgba(0,0,0,0.12);
+      --blue: #378ADD; --text: #1a1a18; --muted: #9a9893; --radius: 10px;
+    }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); padding: 2.5rem 1.25rem 4rem; display: flex; justify-content: center; }
+    .wrap { width: 100%; max-width: 680px; }
+    h1 { font-size: 22px; font-weight: 500; margin-bottom: 0.3rem; }
+    .sub { font-size: 13px; color: var(--muted); margin-bottom: 2rem; }
+    .label { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; display: block; }
+    .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.25rem; }
+    input[type="password"], textarea {
+      width: 100%; padding: 10px 13px; font-size: 14px; font-family: var(--font);
+      border: 0.5px solid rgba(0,0,0,0.2); border-radius: 8px;
+      background: var(--surface); color: var(--text); outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input[type="password"]:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(55,138,221,0.12); }
+    textarea { min-height: 100px; resize: vertical; line-height: 1.6; }
+    .upload-zone {
+      border: 0.5px dashed rgba(0,0,0,0.2); border-radius: var(--radius);
+      min-height: 160px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; cursor: pointer;
+      position: relative; overflow: hidden; background: #fafaf8;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .upload-zone:hover { border-color: var(--blue); background: #E6F1FB; }
+    .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .upload-zone img { width: 100%; height: 100%; object-fit: contain; position: absolute; top:0; left:0; border-radius: var(--radius); }
+    .upload-hint { font-size: 13px; color: var(--muted); text-align: center; padding: 1rem; pointer-events: none; z-index: 1; }
+    .upload-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+    .btn { width: 100%; padding: 13px; font-size: 14px; font-weight: 500; font-family: var(--font); background: var(--text); color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.78; }
+    .btn:disabled { opacity: 0.35; cursor: default; }
+    .status { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-bottom: 1rem; }
+    .status.loading { background: #E6F1FB; color: #185FA5; }
+    .status.success { background: #EAF3DE; color: #3B6D11; }
+    .status.error { background: #FCEBEB; color: #791F1F; }
+    .result-img { width: 100%; border-radius: var(--radius); display: block; }
+    .download-btn { display: inline-block; margin-top: 1rem; padding: 9px 20px; font-size: 13px; font-weight: 500; font-family: var(--font); background: #EAF3DE; color: #3B6D11; border: 0.5px solid #97C459; border-radius: 8px; cursor: pointer; text-decoration: none; }
+    .download-btn:hover { opacity: 0.8; }
+    .model-badge { display: inline-block; font-size: 11px; font-weight: 500; background: #E6F1FB; color: #185FA5; padding: 3px 10px; border-radius: 20px; margin-bottom: 1rem; }
+    .result-box { display: none; }
+    .result-box.visible { display: block; }
+    pre { font-size: 11px; white-space: pre-wrap; word-break: break-all; margin-top: 8px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <p style="font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;">Studio VIR</p>
+  <h1>Teste — Nano Banana 2</h1>
+  <p class="sub">Valida a integração do modelo de edição de imagem via API antes de integrar na plataforma principal.</p>
+
+  <div class="card">
+    <span class="label">API Key do Google AI Studio</span>
+    <input type="password" id="apiKey" placeholder="AIzaSy..." />
+    <p style="font-size:11px;color:var(--muted);margin-top:6px;">Sua chave não é enviada para nenhum servidor — usada só localmente no navegador.</p>
+  </div>
+
+  <div class="card">
+    <span class="label" style="margin-bottom:10px;">Imagem base</span>
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-hint">
+        <span class="upload-icon">⊕</span>
+        Clique para fazer upload da imagem original
+      </div>
+      <input type="file" accept="image/jpeg,image/png,image/webp" id="imageFile" />
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="label">Prompt de edição</span>
+    <textarea id="prompt" placeholder="Descreva o que quer alterar na imagem..."></textarea>
+  </div>
+
+  <div class="card">
+    <span class="label" style="margin-bottom:10px;">Modelo</span>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="radio" name="model" value="models/gemini-3.1-flash-image-preview" checked /> Nano Banana 2
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="radio" name="model" value="models/nano-banana-pro-preview" /> Nano Banana Pro
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="radio" name="model" value="models/gemini-2.5-flash-image" /> Nano Banana (original)
+      </label>
+    </div>
+  </div>
+
+  <button class="btn" id="generateBtn">Gerar imagem</button>
+
+  <div style="margin-top:1.5rem;" class="result-box" id="resultBox">
+    <div class="card">
+      <span class="model-badge" id="modelBadge"></span>
+      <div id="statusMsg"></div>
+      <div id="imageResult"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let imageBase64 = '';
+  let imageMimeType = '';
+
+  document.getElementById('imageFile').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    imageMimeType = file.type;
+    const reader = new FileReader();
+    reader.onload = e => {
+      imageBase64 = e.target.result.split(',')[1];
+      let img = document.querySelector('#uploadZone img');
+      if (!img) { img = document.createElement('img'); document.getElementById('uploadZone').appendChild(img); }
+      img.src = e.target.result;
+      document.querySelector('#uploadZone .upload-hint').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('generateBtn').addEventListener('click', async () => {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const prompt = document.getElementById('prompt').value.trim();
+    const model = document.querySelector('input[name="model"]:checked').value;
+
+    if (!apiKey) { alert('Coloca a API Key primeiro.'); return; }
+    if (!imageBase64) { alert('Faz upload de uma imagem primeiro.'); return; }
+    if (!prompt) { alert('Escreve um prompt primeiro.'); return; }
+
+    const btn = document.getElementById('generateBtn');
+    btn.textContent = 'Gerando...'; btn.disabled = true;
+
+    const resultBox = document.getElementById('resultBox');
+    resultBox.classList.add('visible');
+    document.getElementById('modelBadge').textContent = model.split('/')[1];
+    document.getElementById('statusMsg').innerHTML = '<div class="status loading">Enviando para o modelo — isso pode levar alguns segundos...</div>';
+    document.getElementById('imageResult').innerHTML = '';
+
+    try {
+      const body = {
+        contents: [{
+          role: 'user',
+          parts: [
+            { inline_data: { mime_type: imageMimeType, data: imageBase64 } },
+            { text: prompt }
+          ]
+        }],
+        generationConfig: { responseModalities: ['IMAGE', 'TEXT'] }
+      };
+
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/${model}:generateContent?key=${apiKey}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      );
+
+      const data = await res.json();
+
+      if (data.error) {
+        document.getElementById('statusMsg').innerHTML = `<div class="status error">Erro: ${data.error.message}</div>`;
+        btn.textContent = 'Gerar imagem'; btn.disabled = false;
+        return;
+      }
+
+      let imgData = null;
+      let imgMime = 'image/jpeg';
+      let textResponse = '';
+
+      // Debug: log full response structure
+      console.log('Full response:', JSON.stringify(data, null, 2));
+
+      // Search recursively for inline_data anywhere in the response
+      function findImages(obj) {
+        if (!obj || typeof obj !== 'object') return;
+        if (obj.inline_data && obj.inline_data.data) {
+          imgData = obj.inline_data.data;
+          imgMime = obj.inline_data.mime_type || 'image/jpeg';
+          console.log('Found image! mime:', imgMime, 'data length:', imgData.length);
+        }
+        if (obj.text) textResponse += obj.text;
+        if (Array.isArray(obj)) { obj.forEach(findImages); }
+        else { Object.values(obj).forEach(findImages); }
+      }
+      findImages(data);
+
+      if (imgData) {
+        const src = `data:${imgMime};base64,${imgData}`;
+        document.getElementById('statusMsg').innerHTML = '<div class="status success">Imagem gerada com sucesso!</div>';
+        document.getElementById('imageResult').innerHTML = `
+          <img src="${src}" class="result-img" />
+          <a href="${src}" download="nano-banana-resultado.png" class="download-btn">Baixar imagem</a>
+          ${textResponse ? `<p style="font-size:12px;color:var(--muted);margin-top:12px;">${textResponse}</p>` : ''}
+        `;
+      } else {
+        document.getElementById('statusMsg').innerHTML = `
+          <div class="status error">
+            O modelo não devolveu imagem. Resposta completa:<br/>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          </div>`;
+      }
+
+    } catch(err) {
+      document.getElementById('statusMsg').innerHTML = `<div class="status error">Erro de conexão: ${err.message}</div>`;
+    }
+
+    btn.textContent = 'Gerar imagem'; btn.disabled = false;
+  });
+</script>
+</body>
+</html>
