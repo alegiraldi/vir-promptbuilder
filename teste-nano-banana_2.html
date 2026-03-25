@@ -176,12 +176,14 @@
       // Debug: log full response structure
       console.log('Full response:', JSON.stringify(data, null, 2));
 
-      // Search recursively for inline_data anywhere in the response
+      // Search recursively for inline_data or inlineData anywhere in the response
       function findImages(obj) {
         if (!obj || typeof obj !== 'object') return;
-        if (obj.inline_data && obj.inline_data.data) {
-          imgData = obj.inline_data.data;
-          imgMime = obj.inline_data.mime_type || 'image/jpeg';
+        // Handle both snake_case and camelCase
+        const inlineData = obj.inline_data || obj.inlineData;
+        if (inlineData && inlineData.data) {
+          imgData = inlineData.data;
+          imgMime = inlineData.mime_type || inlineData.mimeType || 'image/jpeg';
           console.log('Found image! mime:', imgMime, 'data length:', imgData.length);
         }
         if (obj.text) textResponse += obj.text;
